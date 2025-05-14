@@ -1,33 +1,22 @@
-import { useState } from 'react'
-import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, IconButton, Box } from '@mui/material'
-import { Brightness4, Brightness7 } from '@mui/icons-material'
-import { lightTheme, darkTheme } from './theme'
+import { ThemeProvider, CssBaseline, Box } from '@mui/material'
 import { CommunityMap } from './components/CommunityMap'
+import { theme } from './theme'
+import './App.css'
 
 function App() {
-  const [isDarkMode, setIsDarkMode] = useState(false)
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode)
-  }
-
   return (
-    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
+    <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-        <AppBar position="static">
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Community Map
-            </Typography>
-            <IconButton color="inherit" onClick={toggleTheme}>
-              {isDarkMode ? <Brightness7 /> : <Brightness4 />}
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-        <Box sx={{ flex: 1, width: '100%' }}>
-          <CommunityMap />
-        </Box>
+      <Box
+        sx={{
+          height: '100vh',
+          width: '100vw',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
+        <CommunityMap />
       </Box>
     </ThemeProvider>
   )
