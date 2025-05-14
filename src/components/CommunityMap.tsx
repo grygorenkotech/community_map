@@ -118,7 +118,13 @@ export const CommunityMap = () => {
         ['get', 'name_en'],
         ...Array.from(countriesWithMembers).flatMap(country => [
           country,
-          theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.25)' : 'rgba(25, 118, 210, 0.15)'
+          country === 'Ukraine' 
+            ? theme.palette.mode === 'dark' 
+              ? 'rgba(255, 255, 0, 0.25)' 
+              : 'rgba(255, 255, 0, 0.15)'
+            : theme.palette.mode === 'dark' 
+              ? 'rgba(25, 118, 210, 0.25)' 
+              : 'rgba(25, 118, 210, 0.15)'
         ]),
         'transparent'
       ];
@@ -160,7 +166,17 @@ export const CommunityMap = () => {
             offsetCoordinates[1] += radius * Math.sin(angle);
           }
 
-          const marker = new mapboxgl.Marker()
+          const marker = new mapboxgl.Marker(
+            location === 'Dnipro, Ukraine' ? {
+              element: (() => {
+                const el = document.createElement('div');
+                el.innerHTML = '❤️';
+                el.style.fontSize = '26px';
+                el.style.transform = 'translate(-50%, -50%)';
+                return el;
+              })()
+            } : undefined
+          )
             .setLngLat(offsetCoordinates)
             .setPopup(
               new mapboxgl.Popup({ 
