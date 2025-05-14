@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Example User 1",
+    "location": "City, Country",
+    "telegram": "@username",
+    "badge": "Role"
+  },
+  {
+    "name": "Example User 2",
+    "location": "City, Country",
+    "telegram": "@username"
+  }
+] 
