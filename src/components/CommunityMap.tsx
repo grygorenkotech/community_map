@@ -68,7 +68,11 @@ const cityCoordinates: { [key: string]: [number, number] } = {
   'Riga, Latvia': [24.1052, 56.9496],
   'Kryvyi Rih, Ukraine': [33.3474, 47.9105],
   'Tallinn, Estonia': [24.7536, 59.4370],
-  'Mariupol, Ukraine': [37.5413, 47.1308]
+  'Mariupol, Ukraine': [37.5413, 47.1308],
+  'Larnaca, Cyprus': [33.6233, 34.9229],
+  'Katowice, Poland': [19.0238, 50.2613],
+  'Krakow, Poland': [19.9445, 50.0647],
+  'Vic, Spain': [2.2544, 41.9301]
 };
 
 export const CommunityMap = () => {
@@ -93,26 +97,115 @@ export const CommunityMap = () => {
     });
 
     map.current.on('load', () => {
-      // Add markers for each community member
-      const newMarkers = communityData.map((member: CommunityMember) => {
-        const coordinates = cityCoordinates[member.location] || [0, 0];
-
-        const marker = new mapboxgl.Marker()
-          .setLngLat(coordinates)
-          .setPopup(
-            new mapboxgl.Popup({ offset: 25 })
-              .setHTML(`
-                <div style="padding: 10px;">
-                  <h3 style="margin: 0 0 5px 0;">${member.name}</h3>
-                  <p style="margin: 0 0 5px 0;">${member.location}</p>
-                  <p style="margin: 0 0 5px 0;">Telegram: ${member.telegram}</p>
-                  ${member.badge ? `<p style="margin: 0;">Badge: ${member.badge}</p>` : ''}
-                </div>
-              `)
-          );
-
-        return marker;
+      // Додаємо шар з кордонами країн
+      map.current?.addSource('countries', {
+        type: 'vector',
+        url: 'mapbox://mapbox.country-boundaries-v1'
       });
+
+      // Отримуємо унікальний список країн з учасниками
+      const countriesWithMembers = new Set(
+        communityData.map(member => {
+          const location = member.location.split(', ')[1];
+          return location;
+        })
+      );
+
+      // Створюємо масив для match виразу
+      const matchExpression = ['match', ['get', 'name_en']];
+      countriesWithMembers.forEach(country => {
+        matchExpression.push(
+          country,
+          theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.25)' : 'rgba(25, 118, 210, 0.15)'
+        );
+      });
+      matchExpression.push('transparent');
+
+      // Додаємо шар з підсвічуванням країн
+      map.current?.addLayer({
+        'id': 'country-fills',
+        'type': 'fill',
+        'source': 'countries',
+        'source-layer': 'country_boundaries',
+        'paint': {
+          'fill-color': matchExpression,
+          'fill-outline-color': theme.palette.mode === 'dark' ? '#666' : '#ccc'
+        }
+      });
+
+      // Групуємо учасників за містами
+      const membersByLocation = communityData.reduce((acc: { [key: string]: CommunityMember[] }, member: CommunityMember) => {
+        if (!acc[member.location]) {
+          acc[member.location] = [];
+        }
+        acc[member.location].push(member);
+        return acc;
+      }, {});
+
+      // Додаємо маркери для кожного міста
+      const newMarkers = Object.entries(membersByLocation).map(([location, members]) => {
+        const coordinates = cityCoordinates[location] || [0, 0];
+        
+        // Якщо в місті більше одного учасника, зміщуємо маркери
+        const markers = members.map((member, index) => {
+          let offsetCoordinates = [...coordinates] as [number, number];
+          
+          if (members.length > 1) {
+            // Створюємо невелике зміщення для кожного маркера
+            const angle = (index * 2 * Math.PI) / members.length;
+            const radius = 0.02; // Збільшений радіус зміщення в градусах
+            offsetCoordinates[0] += radius * Math.cos(angle);
+            offsetCoordinates[1] += radius * Math.sin(angle);
+          }
+
+          const marker = new mapboxgl.Marker()
+            .setLngLat(offsetCoordinates)
+            .setPopup(
+              new mapboxgl.Popup({ 
+                offset: 25,
+                className: 'custom-popup'
+              })
+                .setHTML(`
+                  <div style="padding: 10px;">
+                    <h3 style="margin: 0 0 5px 0;">${member.name}</h3>
+                    <p style="margin: 0 0 5px 0;">${member.location}</p>
+                    <p style="margin: 0 0 5px 0;">Telegram: ${member.telegram}</p>
+                    ${member.badge ? `<p style="margin: 0;">Badge: ${member.badge}</p>` : ''}
+                  </div>
+                `)
+            );
+
+          return marker;
+        });
+
+        return markers;
+      }).flat();
+
+      // Додаємо кастомні стилі для попапу
+      const style = document.createElement('style');
+      style.textContent = `
+        .custom-popup .mapboxgl-popup-content {
+          background: ${theme.palette.background.paper};
+          color: ${theme.palette.text.primary};
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .custom-popup .mapboxgl-popup-close-button {
+          color: ${theme.palette.text.primary};
+          font-size: 20px;
+          padding: 4px 8px;
+          background: ${theme.palette.background.paper};
+          border-radius: 4px;
+          margin: 4px;
+        }
+        .custom-popup .mapboxgl-popup-close-button:hover {
+          background: ${theme.palette.action.hover};
+        }
+        .custom-popup .mapboxgl-popup-tip {
+          border-top-color: ${theme.palette.background.paper} !important;
+        }
+      `;
+      document.head.appendChild(style);
 
       newMarkers.forEach(marker => marker.addTo(map.current!));
       setMarkers(newMarkers);
@@ -121,8 +214,13 @@ export const CommunityMap = () => {
     return () => {
       markers.forEach(marker => marker.remove());
       map.current?.remove();
+      // Видаляємо додані стилі при розмонтуванні
+      const styleElement = document.querySelector('style');
+      if (styleElement) {
+        styleElement.remove();
+      }
     };
-  }, [theme.palette.mode]);
+  }, [theme.palette.mode, theme.palette.background.paper, theme.palette.text.primary, theme.palette.action.hover]);
 
   return (
     <Paper 
