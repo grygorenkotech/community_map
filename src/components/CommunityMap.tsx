@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Box, Paper, useTheme } from '@mui/material';
 import communityData from '../data/community.json';
+import type { ExpressionSpecification } from 'mapbox-gl';
 
 // Use environment variable for Mapbox token
 const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
@@ -112,14 +113,15 @@ export const CommunityMap = () => {
       );
 
       // Створюємо масив для match виразу
-      const matchExpression = ['match', ['get', 'name_en']];
-      countriesWithMembers.forEach(country => {
-        matchExpression.push(
+      const matchExpression: ExpressionSpecification = [
+        'match',
+        ['get', 'name_en'],
+        ...Array.from(countriesWithMembers).flatMap(country => [
           country,
           theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.25)' : 'rgba(25, 118, 210, 0.15)'
-        );
-      });
-      matchExpression.push('transparent');
+        ]),
+        'transparent'
+      ];
 
       // Додаємо шар з підсвічуванням країн
       map.current?.addLayer({
