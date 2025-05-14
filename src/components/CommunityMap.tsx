@@ -5,7 +5,9 @@ import { Box, Paper, useTheme } from '@mui/material';
 import communityData from '../data/community.json';
 
 // Use environment variable for Mapbox token
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+console.log('Mapbox token available:', !!mapboxToken);
+mapboxgl.accessToken = mapboxToken;
 
 interface CommunityMember {
   name: string;
@@ -128,10 +130,21 @@ export const CommunityMap = () => {
       sx={{ 
         height: '100%',
         width: '100%',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        margin: 0,
+        padding: 0,
+        borderRadius: 0
       }}
     >
-      <Box ref={mapContainer} sx={{ height: '100%', width: '100%' }} />
+      <Box 
+        ref={mapContainer} 
+        sx={{ 
+          height: '100%', 
+          width: '100%',
+          margin: 0,
+          padding: 0
+        }} 
+      />
     </Paper>
   );
 }; 
