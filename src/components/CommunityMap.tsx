@@ -73,7 +73,8 @@ const cityCoordinates: { [key: string]: [number, number] } = {
   'Larnaca, Cyprus': [33.6233, 34.9229],
   'Katowice, Poland': [19.0238, 50.2613],
   'Krakow, Poland': [19.9445, 50.0647],
-  'Vic, Spain': [2.2544, 41.9301]
+  'Vic, Spain': [2.2544, 41.9301],
+  'Wroclaw, Poland': [17.0385, 51.1079]
 };
 
 export const CommunityMap = () => {
