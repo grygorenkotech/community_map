@@ -75,7 +75,9 @@ const cityCoordinates: { [key: string]: [number, number] } = {
   'Krakow, Poland': [19.9445, 50.0647],
   'Vic, Spain': [2.2544, 41.9301],
   'Wroclaw, Poland': [17.0385, 51.1079]
-};
+  'Gdansk, Poland': [18.6466, 54.3520],
+  'Valencia, Spain': [-0.3763, 39.4699],
+  };
 
 export const CommunityMap = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
