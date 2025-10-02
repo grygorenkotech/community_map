@@ -77,7 +77,8 @@ const cityCoordinates: { [key: string]: [number, number] } = {
   'Wroclaw, Poland': [17.0385, 51.1079],
   'Gdansk, Poland': [18.6466, 54.3520],
   'Valencia, Spain': [-0.3763, 39.4699],
-  'Bucha, Ukraine': [30.2120, 50.5435]
+  'Bucha, Ukraine': [30.2120, 50.5435],
+  'Marbella, Spain': [-4.8850, 36.5103]
   };
 
 export const CommunityMap = () => {
