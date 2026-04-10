@@ -52,7 +52,6 @@ const membersByLocation: { [key: string]: CommunityMember[] } = members.reduce(
   {} as { [key: string]: CommunityMember[] }
 );
 
-// sorted by member count desc
 const sortedCities = Object.entries(membersByLocation).sort(
   ([, a], [, b]) => b.length - a.length
 );
@@ -64,6 +63,7 @@ export const CommunityMap = () => {
   const expandedCityRef = useRef<string | null>(null);
   const expandCityFnRef = useRef<((location: string) => void) | null>(null);
   const [activeCity, setActiveCity] = useState<string | null>(null);
+  const cityRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxgl.accessToken) return;
@@ -81,7 +81,6 @@ export const CommunityMap = () => {
     });
 
     map.current.on('load', () => {
-      // ── shared expand logic ──────────────────────────────────────────────
       const expandCity = (location: string) => {
         const coordinates = cityCoordinates[location] || [0, 0];
 
@@ -177,10 +176,8 @@ export const CommunityMap = () => {
         markersRef.current = newMarkers;
       };
 
-      // expose to UI
       expandCityFnRef.current = expandCity;
 
-      // ── city markers ─────────────────────────────────────────────────────
       sortedCities.forEach(([location, cityMembers]) => {
         const coordinates = cityCoordinates[location] || [0, 0];
         const count = cityMembers.length;
@@ -237,120 +234,233 @@ export const CommunityMap = () => {
     };
   }, []);
 
-  return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+  // Scroll sidebar to active city
+  useEffect(() => {
+    if (activeCity && cityRefs.current[activeCity]) {
+      cityRefs.current[activeCity]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [activeCity]);
 
-      {/* Stats */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 28,
-          left: 16,
-          background: 'white',
-          borderRadius: 12,
-          padding: '10px 16px',
-          boxShadow: '0 2px 14px rgba(0,0,0,0.13)',
-          fontFamily: 'system-ui, sans-serif',
-          display: 'flex',
-          gap: 16,
-          alignItems: 'center',
-          zIndex: 10,
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: CITY_COLOR, lineHeight: 1 }}>
-            {members.length}
+  return (
+    <div style={{ display: 'flex', width: '100%', height: '100%', fontFamily: 'system-ui, sans-serif' }}>
+      {/* Map */}
+      <div style={{ position: 'relative', flex: 1 }}>
+        <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+
+        {/* Stats */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 28,
+            left: 16,
+            background: 'white',
+            borderRadius: 12,
+            padding: '10px 16px',
+            boxShadow: '0 2px 14px rgba(0,0,0,0.13)',
+            fontFamily: 'system-ui, sans-serif',
+            display: 'flex',
+            gap: 16,
+            alignItems: 'center',
+            zIndex: 10,
+          }}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: CITY_COLOR, lineHeight: 1 }}>
+              {members.length}
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>учасників</div>
           </div>
-          <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>учасників</div>
-        </div>
-        <div style={{ width: 1, height: 36, background: '#eee' }} />
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: MEMBER_COLOR, lineHeight: 1 }}>
-            {sortedCities.length}
+          <div style={{ width: 1, height: 36, background: '#eee' }} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: MEMBER_COLOR, lineHeight: 1 }}>
+              {sortedCities.length}
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>міст</div>
           </div>
-          <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>міст</div>
         </div>
       </div>
 
-      {/* City picker */}
+      {/* Sidebar */}
       <div
         style={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          background: 'white',
-          borderRadius: 14,
-          boxShadow: '0 2px 14px rgba(0,0,0,0.13)',
-          fontFamily: 'system-ui, sans-serif',
-          zIndex: 10,
-          width: 300,
+          width: 320,
+          flexShrink: 0,
+          background: '#fff',
+          borderLeft: '1px solid #f0f0f0',
+          display: 'flex',
+          flexDirection: 'column',
           overflow: 'hidden',
         }}
       >
         <div
           style={{
-            padding: '14px 20px 12px',
-            fontSize: 15,
+            padding: '18px 20px 14px',
+            fontSize: 13,
             fontWeight: 700,
             color: '#aaa',
-            letterSpacing: '0.06em',
+            letterSpacing: '0.07em',
             textTransform: 'uppercase',
             borderBottom: '1px solid #f0f0f0',
+            flexShrink: 0,
           }}
         >
-          Міста
+          Учасники
         </div>
-        <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {sortedCities.map(([location, cityMembers]) => {
             const isActive = activeCity === location;
             const shortName = location.split(',')[0];
+
             return (
-              <button
+              <div
                 key={location}
-                onClick={() => expandCityFnRef.current?.(location)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '13px 20px',
-                  border: 'none',
-                  background: isActive ? '#f0f3ff' : 'transparent',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  borderLeft: isActive ? `3px solid ${CITY_COLOR}` : '3px solid transparent',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = '#fafafa';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                }}
+                ref={(el) => { cityRefs.current[location] = el; }}
               >
-                <span
+                {/* City row */}
+                <button
+                  onClick={() => expandCityFnRef.current?.(location)}
                   style={{
-                    fontSize: 17,
-                    fontWeight: isActive ? 600 : 400,
-                    color: isActive ? CITY_COLOR : '#333',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '13px 20px',
+                    border: 'none',
+                    background: isActive ? '#f0f3ff' : 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    borderLeft: isActive ? `3px solid ${CITY_COLOR}` : '3px solid transparent',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = '#fafafa';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
                   }}
                 >
-                  {shortName}
-                </span>
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: isActive ? CITY_COLOR : '#bbb',
-                    background: isActive ? '#dde3ff' : '#f5f5f5',
-                    borderRadius: 20,
-                    padding: '3px 11px',
-                  }}
-                >
-                  {cityMembers.length}
-                </span>
-              </button>
+                  <span
+                    style={{
+                      fontSize: 16,
+                      fontWeight: isActive ? 600 : 400,
+                      color: isActive ? CITY_COLOR : '#333',
+                    }}
+                  >
+                    {shortName}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: isActive ? CITY_COLOR : '#bbb',
+                      background: isActive ? '#dde3ff' : '#f5f5f5',
+                      borderRadius: 20,
+                      padding: '3px 11px',
+                    }}
+                  >
+                    {cityMembers.length}
+                  </span>
+                </button>
+
+                {/* Member list (collapsible) */}
+                {isActive && <div style={{ borderBottom: '1px solid #f5f5f5' }}>
+                  {cityMembers.map((member) => {
+                    const telegramHandle = member.telegram.startsWith('@')
+                      ? member.telegram.slice(1)
+                      : null;
+                    const telegramUrl = telegramHandle ? `https://t.me/${telegramHandle}` : null;
+
+                    return (
+                      <div
+                        key={member.name + member.telegram}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '9px 20px 9px 26px',
+                          background: isActive ? '#f8f9ff' : 'transparent',
+                        }}
+                      >
+                        {/* Avatar */}
+                        <div
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: '50%',
+                            background: isActive ? MEMBER_COLOR : '#ddd',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: 14,
+                            flexShrink: 0,
+                            transition: 'background 0.2s',
+                          }}
+                        >
+                          {member.name.charAt(0)}
+                        </div>
+
+                        {/* Info */}
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 600,
+                              color: '#1a1a2e',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {member.name}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                            {telegramUrl ? (
+                              <a
+                                href={telegramUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  fontSize: 12,
+                                  color: CITY_COLOR,
+                                  textDecoration: 'none',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
+                                {member.telegram}
+                              </a>
+                            ) : (
+                              <span style={{ fontSize: 12, color: '#bbb' }}>
+                                {member.telegram || '—'}
+                              </span>
+                            )}
+                            {member.badge && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  background: '#f5f0ff',
+                                  color: MEMBER_COLOR,
+                                  padding: '1px 7px',
+                                  borderRadius: 10,
+                                  fontWeight: 600,
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {member.badge}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>}
+              </div>
             );
           })}
         </div>
