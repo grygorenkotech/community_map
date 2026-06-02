@@ -36,6 +36,10 @@ const cityCoordinates: { [key: string]: [number, number] } = {
   'Fastiv, Ukraine': [29.9167, 49.9000],
   'Stockholm, Sweden': [18.0686, 59.3293],
   'Tel Aviv, Israel': [34.7818, 32.0853],
+  'Kryvyi Rih, Ukraine': [33.3960, 47.9077],
+  'Ternopil, Ukraine': [25.5948, 49.5535],
+  'Montreal, Canada': [-73.5674, 45.5017],
+  'Uzhhorod, Ukraine': [22.2879, 48.6208],
 };
 
 const CITY_COLOR = '#4361EE';
