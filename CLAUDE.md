@@ -16,9 +16,10 @@ npm run preview    # Preview production build
 Copy `.env.example` to `.env` and fill in:
 
 - `VITE_MAPBOX_ACCESS_TOKEN` — Mapbox GL JS token (required for the map to render)
-- `COMMUNITY_DATA` — JSON string of community members array (used by `scripts/generate-community-data.js` during `npm run build`); in dev, `src/data/community.json` is used directly
+- `NOTION_TOKEN` + `NOTION_DATABASE_ID` — members database in Notion (preferred data source). The prebuild script takes rows with `Status = active` and a non-empty `Location`. Build-time only, never exposed to the browser.
+- `COMMUNITY_DATA` — JSON string of community members array; fallback when the Notion variables are not set
 
-The `COMMUNITY_DATA` env var is only consumed at build time by the prebuild script, which writes `src/data/community.json`. In development, edit `src/data/community.json` directly.
+The prebuild script (`scripts/generate-community-data.js`) writes `src/data/community.json`. Cities missing from `cityCoordinates` are geocoded via Mapbox at build time and stored as `coordinates` on each member. In development, edit `src/data/community.json` directly.
 
 ## Architecture
 
@@ -26,7 +27,7 @@ Single-page React + Vite app. The entire UI is one component: `src/components/Co
 
 **Data flow:**
 - `src/data/community.json` — source of truth for member data at runtime. Each entry: `{ name, location, telegram, badge? }`.
-- `cityCoordinates` map in `CommunityMap.tsx` — hardcoded `[lng, lat]` pairs keyed by the exact `"City, Country"` strings used in `community.json`. **When adding a new city, you must add its coordinates here.**
+- `cityCoordinates` map in `CommunityMap.tsx` — hardcoded `[lng, lat]` pairs keyed by the exact `"City, Country"` strings used in `community.json`. Cities not listed here are geocoded at build time; members whose city can't be resolved are left off the map.
 - `src/services/notion.ts` — Notion API integration (currently unused in the UI; was the intended live data source). Uses `VITE_NOTION_API_KEY` and `VITE_NOTION_DATABASE_ID`.
 
 **Map behavior:**

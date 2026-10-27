@@ -10,6 +10,7 @@ interface CommunityMember {
   location: string;
   telegram: string;
   badge?: string;
+  coordinates?: [number, number];
 }
 
 const cityCoordinates: { [key: string]: [number, number] } = {
@@ -47,7 +48,14 @@ const MEMBER_COLOR = '#7B2D8B';
 
 const members = communityData as CommunityMember[];
 
-const membersByLocation: { [key: string]: CommunityMember[] } = members.reduce(
+// Geocoded coordinates from the prebuild script fill in cities missing above.
+members.forEach((m) => {
+  if (!cityCoordinates[m.location] && m.coordinates) cityCoordinates[m.location] = m.coordinates;
+});
+
+const membersByLocation: { [key: string]: CommunityMember[] } = members
+  .filter((m) => cityCoordinates[m.location])
+  .reduce(
   (acc, member) => {
     if (!acc[member.location]) acc[member.location] = [];
     acc[member.location].push(member);
